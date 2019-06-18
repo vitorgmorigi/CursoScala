@@ -54,7 +54,13 @@ abstract class TweetSet {
    * Question: Should we implment this method here, or should it remain abstract
    * and be implemented in the subclasses?
    */
-    def union(that: TweetSet): TweetSet // Implementado no NonEmpty
+  def union(that: TweetSet): TweetSet = {
+
+    var aux: TweetSet = that // cria um TweetSet auxiliar e iguala ao que se quer unir
+    this.foreach(x => if(!aux.contains(x)) aux = aux.incl(x)) // itera sobre todos os tweets do TweetSet atual e compara se cada tweet contém no que se quer unir. Quando não conter, inclui no aux.
+    aux
+
+  }
   
   /**
    * Returns the tweet from this set which has the greatest retweet count.
@@ -76,15 +82,19 @@ abstract class TweetSet {
    * Question: Should we implment this method here, or should it remain abstract
    * and be implemented in the subclasses?
    */
+
+    def isEmpty: Boolean
+
     def descendingByRetweet: TweetList = {
 
+      if(this.isEmpty)
+        Nil
 
-
-
-  // PAREI AQUI
-
-
-
+      else
+        {
+          val mostRet = mostRetweeted
+          new Cons(mostRet, remove(mostRet).descendingByRetweet)
+        }
 
     }
   
@@ -118,11 +128,12 @@ abstract class TweetSet {
 
 class Empty extends TweetSet {
     override def filter (p: Tweet => Boolean): TweetSet = this
-    override def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet = ???
-    override def union(that: TweetSet): TweetSet = that
+    override def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet = acc
+
+    def isEmpty = true
 
     override def mostRetweeted: Tweet = throw new java.util.NoSuchElementException
-    override def descendingByRetweet: TweetList = null
+
   
   /**
    * The following methods are already implemented
@@ -148,19 +159,14 @@ class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
 
     def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet = acc
 
-    override def union(that: TweetSet): TweetSet = {
-
-      var aux: TweetSet = that // cria um TweetSet auxiliar e iguala ao que se quer unir
-      this.foreach(x => if(!aux.contains(x)) aux.incl(x)) // itera sobre todos os tweets do TweetSet atual e compara se cada tweet contém no que se quer unir. Quando não conter, inclui no aux.
-      aux
-
-    }
 
     override def mostRetweeted: Tweet = {
-      var aux: Tweet = null // cria um tweet nulo
-      foreach(x => if(x.retweets > aux.retweets) aux = x) // itera sobre todos e se o atual for maior que o aux, aux passa a ser o maior
+      var aux: Tweet = new Tweet("user", "teste", 0) // cria um tweet nulo
+      this.foreach(x => if(x.retweets > aux.retweets) aux = x) // itera sobre todos e se o atual for maior que o aux, aux passa a ser o maior
       aux // retorna aux
     }
+
+    def isEmpty = false
   
     
   /**
@@ -216,17 +222,25 @@ object GoogleVsApple {
   val google = List("android", "Android", "galaxy", "Galaxy", "nexus", "Nexus")
   val apple = List("ios", "iOS", "iphone", "iPhone", "ipad", "iPad")
 
-    lazy val googleTweets: TweetSet = ???
-  lazy val appleTweets: TweetSet = ???
+    lazy val googleTweets: TweetSet = TweetReader.allTweets.filter(t => google.exists(s => t.text.contains(s)))
+    lazy val appleTweets: TweetSet = TweetReader.allTweets.filter(t => apple.exists(s => t.text.contains(s)))
   
   /**
    * A list of all tweets mentioning a keyword from either apple or google,
    * sorted by the number of retweets.
    */
-     lazy val trending: TweetList = ???
+     lazy val trending: TweetList = googleTweets.union(appleTweets).descendingByRetweet
   }
 
 object Main extends App {
   // Print the trending tweets
-  GoogleVsApple.trending foreach println
+//  GoogleVsApple.trending foreach println
+//  println("--------------------------------")
+//  allTweets.descendingByRetweet foreach println
+//  println("--------------------------------")
+
+  val teste: TweetList = allTweets.filter(t => t.user == "gizmodo").descendingByRetweet
+  teste foreach println
+
+
 }
