@@ -24,9 +24,20 @@ object Huffman {
   
 
   // Part 1: Basics
-    def weight(tree: CodeTree): Int = ??? // tree match ...
+    def weight(tree: CodeTree): Int = tree match {
+
+        case Leaf(_, weight) => weight // se for uma folha, retornar o peso dela
+        case Fork(_, _, _, weight) => weight // se for um fork, retornar o peso dele
+    }
+
+
   
-    def chars(tree: CodeTree): List[Char] = ??? // tree match ...
+    def chars(tree: CodeTree): List[Char] = tree match {
+
+        case Leaf(char, _) => List(char)
+        case Fork(_, _, chars, _) => chars
+
+    }
   
   def makeCodeTree(left: CodeTree, right: CodeTree) =
     Fork(left, right, chars(left) ::: chars(right), weight(left) + weight(right))
@@ -69,7 +80,36 @@ object Huffman {
    *       println("integer is  : "+ theInt)
    *   }
    */
-    def times(chars: List[Char]): List[(Char, Int)] = ???
+  var finalList: List[(Char, Int)] = List() // cria uma lista vazia
+
+    def times(chars: List[Char]): List[(Char, Int)] = {
+
+        var c = chars // cria uma variavel c para poder editar a lista
+        var cont: Int = 0 // contador que conta quantas vezes o elemento se repete em cada iteração
+        if(c.isEmpty) // se c for vazia, retorna finalList
+          finalList
+
+        else{
+          var aux: Char = c.head //
+          var pair: (Char, Int) = (aux, cont)
+          for(char <- c){
+            if(aux == char){
+              cont=cont+1
+            }
+            pair = (aux, cont)
+            if(cont > 1)
+              c = c.filter(_ != aux) // remove o aux da lista
+          }
+          finalList = pair :: finalList // adiciona o pair na finalList
+
+          if(cont > 1)
+            times(c)
+          else
+            times(c.tail)
+        }
+
+
+    }
   
   /**
    * Returns a list of `Leaf` nodes for a given frequency table `freqs`.
@@ -78,7 +118,26 @@ object Huffman {
    * head of the list should have the smallest weight), where the weight
    * of a leaf is the frequency of the character.
    */
-    def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] = ???
+    def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] = {
+      var resultList: List[Leaf] = List() // cria uma lista fazia de Leafs
+      def iterator(fr: List[(Char, Int)]): Unit  = { // metodo que itera sobre a lista de freqs
+        var lightWeight = fr.head // inicialmente iguala a head do fr
+        for(f <- fr){
+          if(f._2 <= lightWeight._2) { // verifica se o weight atual é menor ou igual ao weight do lightWeight
+            lightWeight = f
+          }
+
+        }
+        var aux: Leaf = Leaf(lightWeight._1, lightWeight._2)
+        resultList = resultList :+ aux // para cada iteracao adiciona o aux no final da resultList
+
+        if(resultList.length != freqs.length) // enquanto o tamanho da resultList nao for igual ao do freqs, continua iterando
+          iterator(fr.filter(x => x != lightWeight)) // filtra o fr excluindo o lightweight atual
+
+      }
+      iterator(freqs) // chamada do metodo iterator no metodo makeOrderedLeafList
+      resultList // retorno do metodo makeOrderedLeafList
+    }
   
   /**
    * Checks whether the list `trees` contains only one single code tree.
